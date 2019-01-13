@@ -12,7 +12,7 @@ from pytz import timezone
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from exceptions import NHLTeamException, NHLPlayerException, NHLRequestException
+from .exceptions import NHLTeamException, NHLPlayerException, NHLRequestException
 
 
 SESSION = requests.session()
