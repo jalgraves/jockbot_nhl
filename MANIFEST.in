@@ -1,0 +1,2 @@
+include jockbot_nhl/config.json
+include jockbot_nhl/players.json
