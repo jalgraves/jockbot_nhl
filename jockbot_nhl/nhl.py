@@ -12,12 +12,11 @@ from pytz import timezone
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from . exceptions import NHLTeamException, NHLPlayerException, NHLRequestException
+from exceptions import NHLTeamException, NHLPlayerException, NHLRequestException
 
 
 SESSION = requests.session()
 DATE = datetime.datetime.now(timezone('US/Eastern'))
-CNT = 0
 
 
 def get_config():
@@ -30,13 +29,10 @@ def get_config():
     return config
 
 
-def api_request(endpoint, verify=False):
+def api_request(endpoint, verify=True):
     """
     GET request to NHL API
     """
-    global CNT
-    CNT += 1
-    print(f"\nCOUNT: {CNT}\n")
     base_url = 'https://statsapi.web.nhl.com/api/v1/'
     url = f"{base_url}{endpoint}"
     retries = Retry(total=5, backoff_factor=1, status_forcelist=[x for x in range(500, 506)])
@@ -392,10 +388,11 @@ class NHLPlayer(NHL):
     """
     Create an NHL player object
     """
-    def __init__(self, player=None):
+    def __init__(self, player=None, player_id=None):
         super().__init__()
         self.player = player
-        self.player_id = get_player_id(self.player)
+        if not player_id:
+            self.player_id = get_player_id(self.player)
         self.info = self.get_player_info(player_id=self.player_id)
         self.season_stats = self.get_player_stats(player_id=self.player_id)
         self.career_stats = self.get_career_stats(player_id=self.player_id)
