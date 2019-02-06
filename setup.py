@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='jockbot_nhl',
-      version='0.0.3',
+      version='0.0.4',
       description='Retrieve info from NHL API',
       url='http://github.com/jalgraves/jockbot_nhl',
       author='Jonny Graves',

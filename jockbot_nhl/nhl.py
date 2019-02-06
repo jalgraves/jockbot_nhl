@@ -7,12 +7,11 @@ import socket
 import sys
 import time
 
-from datetime import timedelta
 from pytz import timezone
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from exceptions import NHLTeamException, NHLPlayerException, NHLRequestException
+from .exceptions import NHLTeamException, NHLPlayerException, NHLRequestException
 
 
 def _get_config():
@@ -99,7 +98,7 @@ def _recent_games():
     """
     Get games played yesterday
     """
-    date = (DATE - timedelta(1)).strftime('%Y-%m-%d')
+    date = (DATE - datetime.timedelta(1)).strftime('%Y-%m-%d')
     games = {}
     endpoint = f"schedule?date={date}"
     data = _api_request(endpoint)
