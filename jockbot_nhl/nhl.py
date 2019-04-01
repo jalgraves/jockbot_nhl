@@ -12,7 +12,10 @@ from pytz import timezone
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from exceptions import NHLTeamException, NHLPlayerException, NHLRequestException
+
+class JockBotNHLException(Exception):
+    """Base class for jockbot_nhl exceptions"""
+    pass
 
 
 def _get_config():
@@ -47,7 +50,7 @@ def _api_request(endpoint, verify=True):
     if request.status_code != 200:
         error_message = f"Error with NHL API request | status: {request.status_code}\nurl: {url}\n{request.content}"
         logging.error(error_message)
-        raise NHLRequestException(error_message)
+        raise JockBotNHLException(error_message)
     else:
         data = request.json()
     return data
@@ -57,10 +60,10 @@ def _team_id(team):
     """Get the NHL API ID for a provided team"""
     teams = CONFIG['team_names_and_cities']
     if team.lower() not in teams.keys():
-        raise NHLTeamException(f"Unrecognized team: {team}")
+        raise JockBotNHLException(f"Unrecognized team: {team}")
     team_id = teams.get(team.lower())
     if not team_id:
-        raise NHLTeamException(f"Error retrieving ID for {team}")
+        raise JockBotNHLException(f"Error retrieving ID for {team}")
     return team_id
 
 
@@ -234,7 +237,7 @@ def _player_id(player):
         players = json.load(f)
     player_id = players.get(player)
     if not player:
-        raise NHLPlayerException(f"Player Not Found {player}")
+        raise JockBotNHLException(f"Player Not Found {player}")
     return player_id
 
 

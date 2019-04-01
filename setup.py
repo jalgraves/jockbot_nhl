@@ -1,11 +1,11 @@
 from setuptools import setup
 
 setup(name='jockbot_nhl',
-      version='0.0.5',
+      version='0.0.6',
       description='Retrieve info from NHL API',
       url='http://github.com/jalgraves/jockbot_nhl',
       author='Jonny Graves',
-      author_email='jal@jalgraves.com',
+      author_email='jalgraves@yahoo.com',
       license='MIT',
       packages=['jockbot_nhl'],
       zip_safe=False,
