@@ -181,8 +181,10 @@ def _game_scores(status, games=None, linescore=False):
         if linescore:
             game_id = game['gamePk']
             game_data['linescore'] = _get_linescore(game_id)
-            game_data['period'] = game_data['linescore']['currentPeriodOrdinal']
-            game_data['time_left'] = game_data['linescore']['currentPeriodTimeRemaining']
+            current_period = game_data['linescore'].get('currentPeriodOrdinal')
+            time_left = game_data['linescore'].get('currentPeriodTimeRemaining')
+            game_data['period'] = current_period
+            game_data['time_left'] = time_left
         if game['gameType'] != 'PR' and game_status == status:
             game_data['date'] = games['date']
             game_data['away_team']['name'] = teams['away']['team']['name']
@@ -428,7 +430,7 @@ def main():
         pprint(team.name)
     else:
         nhl = NHL()
-        pprint(nhl.live_scores)
+        pprint(nhl.recent_scores)
 
 
 if __name__ == '__main__':
