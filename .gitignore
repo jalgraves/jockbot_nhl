@@ -5,4 +5,8 @@ dist/
 .DS_Store
 __pycache__
 Makefile
-
+scrap.py
+jockbot_nhl/npt.py
+news.py
+npt.py
+tmp.py
