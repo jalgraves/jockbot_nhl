@@ -78,9 +78,8 @@ def _divisions():
         yield from divisions
 
 
-def _todays_games():
-    """Get NHL games being played today"""
-    date = datetime.datetime.strftime(DATE, "%Y-%m-%d")
+def _games_on_date(date):
+    """Get NHL games being played on a given date"""
     games = {}
     endpoint = f"schedule?date={date}"
     data = _api_request(endpoint)
@@ -91,21 +90,20 @@ def _todays_games():
         games_list = data['dates'][0]['games']
         games['games'] = games_list
         return games
+
+
+def _todays_games():
+    """Get NHL games being played today"""
+    date = datetime.datetime.strftime(DATE, "%Y-%m-%d")
+    games = _games_on_date(date)
+    return games
 
 
 def _recent_games():
     """Get games played yesterday"""
     date = (DATE - datetime.timedelta(1)).strftime('%Y-%m-%d')
-    games = {}
-    endpoint = f"schedule?date={date}"
-    data = _api_request(endpoint)
-    if data:
-        if data['totalGames'] == 0:
-            return
-        games['date'] = data['dates'][0]['date']
-        games_list = data['dates'][0]['games']
-        games['games'] = games_list
-        return games
+    games = _games_on_date(date)
+    return games
 
 
 def _standings(records=False):
