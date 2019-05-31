@@ -328,7 +328,7 @@ class NHL:
     def get_player_stats(self, player_id=None, player_name=None, season=None):
         """Get individual stats for a player"""
         if not player_id:
-            player_id = self.get_player_id(player_name)
+            player_id = _player_id(player_name)
         player_info = self.get_player_info(player_id)
         team = player_info['currentTeam']['id']
         if not season:

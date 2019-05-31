@@ -5,7 +5,7 @@ jobs:
     steps:
       - checkout
       - run: docker build -t jockbot_nhl .
-      - run: docker run --name jockbot jockbot_nhl
+      - run: docker run --rm --name jockbot jockbot_nhl
 
 workflows:
   version: 2
