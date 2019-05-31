@@ -1,3 +1,8 @@
+.PHONY: all test clean
+
+test:
+		nosetests test/test_jockbot_nhl.py
+
 clean:
 		rm -rf build/
 		rm -rf dist/
@@ -11,6 +16,3 @@ upload:
 
 rebase:
 		git checkout master && git fetch origin && git rebase origin/master
-
-test:
-		nosetests tests/test_jockbot_nhl.py
