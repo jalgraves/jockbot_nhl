@@ -1,5 +1,8 @@
 {
-    "url": "https://statsapi.web.nhl.com/api/v1/",
+    "urls": {
+        "stats": "https://statsapi.web.nhl.com/api/v1/",
+        "records": "http://www.nhl.com/stats/rest/"
+    },
     "team_names_and_cities": {
         "new jersey devils": 1,
         "devils": 1,
@@ -153,5 +156,9 @@
         },
         "league": {},
         "records": {}
+    },
+    "stat_keys": {
+        "goalies": ["assists", "gamesPlayed", "gamesStarted", "goals", "goalsAgainst", "goalsAgainstAverage", "losses", "otLosses", "penaltyMinutes", "playerBirthCity", "playerBirthCountry", "playerBirthDate", "playerBirthStateProvince", "playerDraftOverallPickNo", "playerDraftRoundNo", "playerDraftYear", "playerFirstName", "playerHeight", "playerId", "playerInHockeyHof", "playerIsActive", "playerLastName", "playerName", "playerNationality", "playerPositionCode", "playerShootsCatches", "playerTeamsPlayedFor", "playerWeight", "points", "savePctg", "saves", "seasonId", "shotsAgainst", "shutouts", "ties", "timeOnIce", "wins"],
+        "skaters": ["assists", "faceoffWinPctg", "gameWinningGoals", "gamesPlayed", "goals", "otGoals", "penaltyMinutes", "playerBirthCity", "playerBirthCountry", "playerBirthDate", "playerBirthStateProvince", "playerDraftOverallPickNo", "playerDraftRoundNo", "playerDraftYear", "playerFirstName", "playerHeight", "playerId", "playerInHockeyHof", "playerIsActive", "playerLastName", "playerName", "playerNationality", "playerPositionCode", "playerShootsCatches", "playerTeamsPlayedFor", "playerWeight", "plusMinus", "points", "pointsPerGame", "ppGoals", "ppPoints", "seasonId", "shGoals", "shPoints", "shiftsPerGame", "shootingPctg", "shots", "timeOnIcePerGame"]
     }
 }
