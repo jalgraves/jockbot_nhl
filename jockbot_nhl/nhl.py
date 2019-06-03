@@ -4,7 +4,6 @@ import logging
 import os
 import requests
 import socket
-import sys
 import time
 
 from collections import namedtuple, OrderedDict
@@ -31,11 +30,12 @@ DATE = datetime.datetime.now(timezone('US/Eastern'))
 CONFIG = _get_config()
 
 
-def _api_request(endpoint, verify=True):
+def _api_request(endpoint, base_url=None, verify=True):
     """
     GET request to NHL API
     """
-    base_url = 'https://statsapi.web.nhl.com/api/v1/'
+    if not base_url:
+        base_url = 'https://statsapi.web.nhl.com/api/v1/'
     url = f"{base_url}{endpoint}"
     retries = Retry(total=5, backoff_factor=1, status_forcelist=[x for x in range(500, 506)])
     SESSION.mount('http://', HTTPAdapter(max_retries=retries))
@@ -127,6 +127,27 @@ def _standings(records=False):
     return standings
 
 
+def _wild_card_standings(conference):
+    """Get current wild card standings"""
+    endpoint = "standings/wildCard"
+    if conference == 'eastern':
+        data = _api_request(endpoint)['records'][0]
+    elif conference == 'western':
+        data = _api_request(endpoint)['records'][1]
+    else:
+        error_message = f"Invalid Conference: {conference}"
+        raise JockBotNHLException(error_message)
+    wildcard = OrderedDict()
+    standings = {'conference': data['conference']['name']}
+    teams = data['teamRecords']
+    for team in teams:
+        team_name = team['team']['name']
+        wildcard_rank = team['wildCardRank']
+        wildcard[team_name] = [wildcard_rank]
+    standings['standings'] = wildcard
+    return standings
+
+
 def _fetch_standings(standings, standings_type):
     """Return the requested standings type; division, conference, or league"""
     standings = standings.get(standings_type)
@@ -193,19 +214,89 @@ def _game_scores(status, games=None, linescore=False):
     return game_scores
 
 
+def _fetch_league_leaders(stat, player_type, season=None, season_type='2', num_players=10, reverse=True, time_filter=0):
+    """Fetch stat leaders
+    VALID SKATER STATS: 
+    points, assists, goals, penaltyMinutes, faceoffWinPctg, gameWinningGoals, gamesPlayed
+    otGoals (overtime goals), plusMinus, pointsPerGame, ppGoals (power play goals) 
+    ppPoints (power play points), shGoals (short handed goals) shPoints (short handed points)
+    shiftsPerGame, shots, shootingPctg, timeOnIcePerGame
+
+    VALID GOALIE STATS:
+    assists, gamesPlayed, gamesStarted, goals, goalsAgainst, goalsAgainstAverage,
+    losses, otLosses, penaltyMinutes, points, savePctg, saves, shotsAgainst,
+    shutouts, ties, timeOnIce, wins
+
+    PARAMS
+    :stat: stat to retrieve leaders for
+    :season: str ex. '20182019'  (defaults to current season)
+    :player_type: skater or goalie
+    :season_type: 2 for regular season (default) 3 for playoffs
+    :num_players: int of amount of players to return (default is 10)
+    """
+    if player_type != 'skater' and player_type != 'goalie':
+        raise JockBotNHLException(f"Invalid player_type: {player_type}")
+    base_url = f"http://www.nhl.com/stats/rest/{player_type}s"
+    season = _current_season() if not season else season
+    query = [
+        f"?reportType=season&reportName={player_type}summary", 
+        f"cayenneExp=seasonId={season}%20and%20gameTypeId={season_type}%20and%20timeOnIce%3E{time_filter}&sort={stat}"
+    ]
+    endpoint = "&".join(query)
+    leaders = _api_request(endpoint, base_url=base_url, verify=False)['data']
+    if reverse:
+        leaders.reverse()
+    return leaders[:num_players]
+
+
+def _parse_leaders(stat, player_type, **kwargs):
+    """Parse stats for league leaders"""
+    leaders = OrderedDict()
+    leaders_list = _fetch_league_leaders(stat, player_type, **kwargs)
+    for leader in leaders_list:
+        player_data = {}
+        name = leader['playerName']
+        player_data['team'] = leader['playerTeamsPlayedFor']
+        player_data['value'] = leader[stat]
+        leaders[name] = player_data
+    return leaders
+
+
 def _current_season():
     """Return the current NHL season"""
-    month = DATE.month
-    year = DATE.year
-    if month < 10:
-        season = f"{year - 1}{year}"
+    endpoint = "seasons/current"
+    data = _api_request(endpoint)
+    if data:
+        season = data['seasons'][0]['seasonId']
+        return season
     else:
-        season = f"{year}{year + 1}"
-    return season
+        raise JockBotNHLException('Unable to retrieve current NHL season')
+
+
+def _current_season_start_date():
+    """Return the current NHL season"""
+    endpoint = "seasons/current"
+    data = _api_request(endpoint)
+    if data:
+        season = data['seasons'][0]['regularSeasonStartDate']
+        return season
+    else:
+        raise JockBotNHLException('Unable to retrieve current NHL season')
+
+
+def _filter_stats_check():
+    """Check if the regular season is over 30 days old
+    if True stats should be filtered based players time on ice
+    """
+    season_start = datetime.datetime.strptime(_current_season_start_date(), '%Y-%m-%d')
+    filter_date = (season_start + datetime.timedelta(30))
+    date = datetime.datetime.now()
+    if date > filter_date:
+        return True
 
 
 def _player_ids_by_team(team):
-    """Form dict containing player name and their NHL API player ID
+    """Build dict containing player name and their NHL API player ID
     Iterate through roster and get player names and API IDs
     """
     players = {}
@@ -217,8 +308,8 @@ def _player_ids_by_team(team):
     return players
 
 
-def _all_player_ids():
-    """Return a dict containing all players in the NHL with their
+def _all_active_player_ids():
+    """Return a dict containing all active players in the NHL with their
     names and NHL API player ID
     """
     players = {}
@@ -230,11 +321,25 @@ def _all_player_ids():
     return players
 
 
+def _all_player_ids():
+    """Return a dict containing all players in the NHL with their
+    names and NHL API player ID
+    """
+    player_ids = {}
+    base_url = 'https://records.nhl.com/site/api/'
+    endpoint = 'player'
+    players = _api_request(endpoint, base_url=base_url)['data']
+    for player in players:
+        if player['yearsPro']:
+            name = player['prName'].lower()
+            player_id = player['id']
+            player_ids[name] = player_id
+    return player_ids
+
+
 def _player_id(player):
     """Lookup and return the NHL API player ID for an idividual player"""
-    player_index = os.path.join(os.path.dirname(__file__), 'players.json')
-    with open(player_index, 'r') as f:
-        players = json.load(f)
+    players = _all_player_ids()
     player_id = players.get(player)
     if not player:
         raise JockBotNHLException(f"Player Not Found {player}")
@@ -270,6 +375,10 @@ class NHL:
     league_standings = _fetch_standings(standings, 'league')
     conference_standings = _fetch_standings(standings, 'conference')
     divison_standings = _fetch_standings(standings, 'division')
+    wildcard_standings = {
+        'Eastern': _wild_card_standings('eastern'),
+        'Western': _wild_card_standings('western')
+    }
     team_records = _standings(records=True)
     todays_games = _todays_games()
     recent_games = _recent_games()
@@ -352,6 +461,43 @@ class NHL:
             seasons = data['stats'][0]['splits']
             return seasons
 
+    def goalie_league_leaders(self, stat, **kwargs):
+        """Get league leaders for an individual goaltending stat
+        OPTIONAL KEYWORD ARGS:
+        season: stat leaders for a given season. ex. season='19881989'
+                (default is current season)
+
+        season_type: 2 for regular 3 for post season. ex. season_type='3'
+                     (default is regular season)
+
+        num_players: number of leaders to return. ex. num_players=5
+                     (default is 10)
+
+        time_filter: minimum number of seconds of ice time a player must
+                     have to qualify as a leader. ex. time_filter=25200
+        """
+        if not _filter_stats_check():
+            leaders = _parse_leaders(stat, 'goalie', **kwargs)
+        else:
+            kwargs['time_filter'] = 25200
+            leaders = _parse_leaders(stat, 'goalie', **kwargs)
+        return leaders
+
+    def skater_league_leaders(self, stat, **kwargs):
+        """Get league leaders for an individual skaters stat
+        OPTIONAL KEYWORD ARGS:
+        season: stat leaders for a given season. ex. season='19881989'
+                (default is current season)
+
+        season_type: 2 for regular 3 for post season. ex. season_type='3'
+                     (default is regular season)
+
+        num_players: number of leaders to return. ex. num_players=5
+                     (default is 10)
+        """
+        leaders = _parse_leaders(stat, 'skater', **kwargs)
+        return leaders
+
 
 class NHLTeam(NHL):
     """Create NHL team object"""
@@ -418,17 +564,9 @@ def pprint(obj):
 
 def main():
     """Main function"""
-    # profiler = Profile()
-
-    if len(sys.argv) > 1:
-        team = sys.argv[1]
-        team = NHLTeam(team)
-        # profiler.runcall(NHLTeam, 'boston')
-        # profiler.print_stats()
-        pprint(team.name)
-    else:
-        nhl = NHL()
-        pprint(nhl.recent_scores)
+    nhl = NHL()
+    goals_against_avg_leaders = nhl.goalie_league_leaders('savePctg', season_type='3')
+    pprint(goals_against_avg_leaders)
 
 
 if __name__ == '__main__':

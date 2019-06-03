@@ -1,3 +1,4 @@
+import json
 import unittest
 import types
 
@@ -7,19 +8,35 @@ from jockbot_nhl import nhl
 class TestNHL(unittest.TestCase):
     """Test nhl.py"""
     def setUp(self):
+        self.team_city = 'boston'
+        self.conference = 'eastern'
         self.league = nhl.NHL()
-        self.team = nhl.NHLTeam('boston')
+        self.team = nhl.NHLTeam(self.team_city)
         self.player = 'patrice bergeron'
+        self.team_id = 6
+        self.player_id = 8470638
+        self.config = self._get_config()
+        self.stat_keys = self.config['stat_keys']
+        self.goalie_stat = 'goalsAgainstAverage'
+        self.skater_stat = 'points'
+
+    def _get_config(self):
+        """Get configuration"""
+        # config_file = os.path.join(os.path.dirname(__file__), 'config.json')
+        with open('./jockbot_nhl/config.json', 'r') as f:
+            config = json.load(f)
+        return config
 
     def test_nhl(self):
-        self.assertEqual(self.league.current_season, '20182019', 'Incorrect Seasson')
+        self.assertEqual(len(self.league.current_season), 8, 'Incorrect Seasson')
         self.assertEqual(self.team.name, 'Boston Bruins', 'Incorrect Team')
         self.assertEqual(self.team.venue, 'TD Garden', 'Incorrect Venue')
         self.assertTrue(isinstance(self.league.standings, dict), 'No Standings')
         self.assertTrue(isinstance(self.league.team_records, dict), 'No Team Records')
+        self.assertTrue(isinstance(self.league.wildcard_standings, dict), 'No Wildcard Standings')
 
     def test_team_id(self):
-        team_id = nhl._team_id('boston')
+        team_id = nhl._team_id(self.team_city)
         self.assertEqual(team_id, 6, 'Incorrect Team ID')
 
     def test_divisions(self):
@@ -36,26 +53,62 @@ class TestNHL(unittest.TestCase):
 
     def test_player_id(self):
         player_id = nhl._player_id(self.player)
-        self.assertEqual(player_id, 8470638, 'Incorrerct Player ID')
+        self.assertEqual(player_id, self.player_id, 'Incorrect Player ID')
+
+    def test_wild_card_standings(self):
+        """Test nhl._wild_card_standings"""
+        wildcard = nhl._wild_card_standings(self.conference)
+        self.assertEqual(wildcard['conference'], 'Eastern', 'Incorrect Conference')
+        self.assertTrue(isinstance(wildcard['standings'], dict), 'Incorrect Standings Type')
+
+    def test_fetch_league_leaders_skaters(self):
+        """Test nhl._league_leaders function for skater stats"""
+        stat_keys = self.stat_keys['skaters']
+        leaders = nhl._fetch_league_leaders('points', 'skater')
+        self.assertTrue(isinstance(leaders, list), 'Incorrect skater Type')
+        self.assertEqual(len(leaders), 10, f"Incorrect number of players: {len(leaders)}")
+        message = f"Skater Stat Keys Do Not Match\n{leaders[0].keys()}"
+        self.assertEqual(list(leaders[0].keys()), stat_keys, message)
+
+    def test_fetch_league_leaders_goalies(self):
+        """Test nhl._league_leaders function for goalie stats"""
+        stat_keys = self.stat_keys['goalies']
+        leaders = nhl._fetch_league_leaders('saves', 'goalie')
+        message = f"Skater Stat Keys Do Not Match\n{leaders[0].keys()}"
+        self.assertTrue(isinstance(leaders, list), 'Incorrect goalie Type')
+        self.assertEqual(len(leaders), 10, f"Incorrect number of players: {len(leaders)}")
+        message = f"Skater Stat Keys Do Not Match\n{leaders[0].keys()}"
+        self.assertEqual(list(leaders[0].keys()), stat_keys, message)
+
+    def test_parse_leaders(self):
+        """Test nhl._parse_leaders function"""
+        leaders = nhl._parse_leaders('points', 'skater')
+        print(leaders)
+        self.assertTrue(isinstance(leaders, dict), 'Incorrect leaders Type')
+
+    def test_all_player_ids(self):
+        players = nhl._all_player_ids()
+        self.assertTrue(isinstance(players, dict), 'Incorrect players Type')
+        self.assertEqual(players[self.player], self.player_id, 'Incorrect Player ID')
 
     def test_get_team_info(self):
         """Test NHL.get_team_info function"""
-        info = self.league.get_team_info(team_id=6)
+        info = self.league.get_team_info(team_id=self.team_id)
         self.assertTrue(isinstance(info, dict), 'No Team Info')
 
     def test_get_team_stats(self):
         """Test NHL.get_team_stats function"""
-        stats = self.league.get_team_stats(team_id=6)
+        stats = self.league.get_team_stats(team_id=self.team_id)
         self.assertTrue(isinstance(stats, dict), 'No Team Stats')
 
     def test_get_team_roster(self):
         """Test NHL.get_team_roster function"""
-        roster = self.league.get_team_roster(team_id=6)
+        roster = self.league.get_team_roster(team_id=self.team_id)
         self.assertTrue(isinstance(roster, list), 'No Roster')
 
     def test_get_team_schedule(self):
         """Test NHL.get_team_schedule function"""
-        schedule = self.league.get_team_schedule(team_id=6)
+        schedule = self.league.get_team_schedule(team_id=self.team_id)
         message = f"schedule returned {type(schedule)} not generator"
         self.assertTrue(isinstance(schedule, types.GeneratorType), message)
 
@@ -73,6 +126,20 @@ class TestNHL(unittest.TestCase):
         """Test NHL.get_career_stats function"""
         stats = self.league.get_career_stats(player_name=self.player)
         self.assertTrue(isinstance(stats, list), 'No Career Stats')
+
+    def test_goalie_league_leaders(self):
+        """Test NHL.goalie_league_leaders function"""
+        leaders = self.league.goalie_league_leaders(self.goalie_stat)
+        self.assertEqual(len(leaders), 10, f"Incorrect number of players: {len(leaders)}")
+
+    def test_skater_league_leaders(self):
+        """Test NHL.skater_league_leaders function"""
+        leaders = self.league.skater_league_leaders(self.skater_stat)
+        self.assertEqual(len(leaders), 10, f"Incorrect number of players: {len(leaders)}")
+
+    def test_filter_stats_check(self):
+        """Test nhl._filter_stats_check function"""
+        self.assertTrue(nhl._filter_stats_check(), 'Filter should be True')
 
 
 if __name__ == '__main__':
