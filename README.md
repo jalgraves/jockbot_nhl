@@ -5,9 +5,21 @@
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/jalgraves/jockbot_nhl.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/jalgraves/jockbot_nhl/context:python) [![CircleCI](https://circleci.com/gh/jalgraves/jockbot_nhl.svg?style=svg)](https://circleci.com/gh/jalgraves/jockbot_nhl)
 
 ### Interact with NHL API
+#### Features
+- **Get current or historical NHL league standings**
+- **Get player stats and info for NHL players both active and retired, regualr season and playoffs**
+- **Get stats and info for NHL teams both current and historical**
+- **Get NHL league leaders both current and historical**
+- **All data returned in JSON**
 
-##### Install
+### Install
+#### Pypi
     pip3 install jockbot_nhl
+#### From Source
+    $ git clone git@github.com:jalgraves/jockbot_nhl.git
+    $ cd jockbot_nhl
+    $ python3 setup.py sdist bdist_wheel
+    $ pip3 install .
 
 ##### ATTRIBUTES:
     current_season
@@ -29,6 +41,8 @@
     get_player_info()
     get_player_stats()
     get_career_stats()
+    skater_league_leaders()
+    goalie_league_leaders()
 
 ### Usage
     >>> from jockbot_nhl import NHL, NHLTeam
