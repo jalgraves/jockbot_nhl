@@ -81,7 +81,7 @@ class NHL:
         """Get team roster. Return list of player objects"""
         team_id = _team_id(team_name) if not team_id else team_id
         season = self.current_season if not season else season
-        endpoint = f"teams/{team_id}/roster"
+        endpoint = f"teams/{team_id}/roster?season={season}"
         data = _api_request(endpoint)
         player_list = data['roster']
         return player_list
