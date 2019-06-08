@@ -1,8 +1,8 @@
-import json
 import unittest
 import types
 
 from jockbot_nhl import nhl
+from jockbot_nhl import _helpers
 
 
 class TestNHL(unittest.TestCase):
@@ -13,19 +13,15 @@ class TestNHL(unittest.TestCase):
         self.league = nhl.NHL()
         self.team = nhl.NHLTeam(self.team_city)
         self.player = 'patrice bergeron'
+        self.inactive_player = 'wayne gretzky'
+        self.inactive_player_id = 8447400
         self.team_id = 6
         self.player_id = 8470638
-        self.config = self._get_config()
+        self.config = _helpers._get_config()
         self.stat_keys = self.config['stat_keys']
         self.goalie_stat = 'goalsAgainstAverage'
         self.skater_stat = 'points'
-
-    def _get_config(self):
-        """Get configuration"""
-        # config_file = os.path.join(os.path.dirname(__file__), 'config.json')
-        with open('./jockbot_nhl/config.json', 'r') as f:
-            config = json.load(f)
-        return config
+        self.past_season = '20102011'
 
     def test_nhl(self):
         self.assertEqual(len(self.league.current_season), 8, 'Incorrect Seasson')
@@ -36,24 +32,26 @@ class TestNHL(unittest.TestCase):
         self.assertTrue(isinstance(self.league.wildcard_standings, dict), 'No Wildcard Standings')
 
     def test_team_id(self):
-        team_id = nhl._team_id(self.team_city)
+        team_id = _helpers._team_id(self.team_city)
         self.assertEqual(team_id, 6, 'Incorrect Team ID')
 
     def test_divisions(self):
         """Test _divisions function"""
-        divisions = nhl._divisions()
+        divisions = _helpers._divisions()
         message = f"divisions returned {type(divisions)} not generator"
         self.assertTrue(isinstance(divisions, types.GeneratorType), message)
 
     def test_games_on_date(self):
         """Test _games_on_date function"""
-        games = nhl._games_on_date('2019-05-27')
+        games = _helpers._games_on_date('2019-05-27')
         message = f"Games: {games}"
         self.assertTrue(isinstance(games, dict), message)
 
     def test_player_id(self):
-        player_id = nhl._player_id(self.player)
+        player_id = _helpers._player_id(self.player)
+        inactive_player_id = _helpers._player_id(self.inactive_player)
         self.assertEqual(player_id, self.player_id, 'Incorrect Player ID')
+        self.assertEqual(inactive_player_id, self.inactive_player_id, 'Incorrect Inactive Player ID')
 
     def test_wild_card_standings(self):
         """Test nhl._wild_card_standings"""
@@ -64,7 +62,7 @@ class TestNHL(unittest.TestCase):
     def test_fetch_league_leaders_skaters(self):
         """Test nhl._league_leaders function for skater stats"""
         stat_keys = self.stat_keys['skaters']
-        leaders = nhl._fetch_league_leaders('points', 'skater')
+        leaders = _helpers._fetch_league_leaders('points', 'skater')
         self.assertTrue(isinstance(leaders, list), 'Incorrect skater Type')
         self.assertEqual(len(leaders), 10, f"Incorrect number of players: {len(leaders)}")
         message = f"Skater Stat Keys Do Not Match\n{leaders[0].keys()}"
@@ -73,7 +71,7 @@ class TestNHL(unittest.TestCase):
     def test_fetch_league_leaders_goalies(self):
         """Test nhl._league_leaders function for goalie stats"""
         stat_keys = self.stat_keys['goalies']
-        leaders = nhl._fetch_league_leaders('saves', 'goalie')
+        leaders = _helpers._fetch_league_leaders('saves', 'goalie')
         message = f"Skater Stat Keys Do Not Match\n{leaders[0].keys()}"
         self.assertTrue(isinstance(leaders, list), 'Incorrect goalie Type')
         self.assertEqual(len(leaders), 10, f"Incorrect number of players: {len(leaders)}")
@@ -87,7 +85,7 @@ class TestNHL(unittest.TestCase):
         self.assertTrue(isinstance(leaders, dict), 'Incorrect leaders Type')
 
     def test_all_player_ids(self):
-        players = nhl._all_player_ids()
+        players = _helpers._all_player_ids()
         self.assertTrue(isinstance(players, dict), 'Incorrect players Type')
         self.assertEqual(players[self.player], self.player_id, 'Incorrect Player ID')
 
@@ -104,7 +102,9 @@ class TestNHL(unittest.TestCase):
     def test_get_team_roster(self):
         """Test NHL.get_team_roster function"""
         roster = self.league.get_team_roster(team_id=self.team_id)
+        historical_roster = self.league.get_team_roster(team_id=self.team_id, season=self.past_season)
         self.assertTrue(isinstance(roster, list), 'No Roster')
+        self.assertTrue(isinstance(historical_roster, list), 'No historical roster')
 
     def test_get_team_schedule(self):
         """Test NHL.get_team_schedule function"""
@@ -119,8 +119,10 @@ class TestNHL(unittest.TestCase):
 
     def test_get_player_stats(self):
         """Test NHL.get_player_stats function"""
-        stats = self.league.get_player_stats(player_name=self.player)
-        self.assertTrue(isinstance(stats, dict), 'No Player Stats')
+        player_stats = self.league.get_player_stats(player_name=self.player)
+        inactive_player_stats = self.league.get_player_stats(player_name=self.inactive_player, season='19871988')
+        self.assertTrue(isinstance(player_stats, dict), 'No Player Stats')
+        self.assertTrue(isinstance(inactive_player_stats, dict), 'No Inactive Player Stats')
 
     def test_get_career_stats(self):
         """Test NHL.get_career_stats function"""
@@ -140,6 +142,11 @@ class TestNHL(unittest.TestCase):
     def test_filter_stats_check(self):
         """Test nhl._filter_stats_check function"""
         self.assertTrue(nhl._filter_stats_check(), 'Filter should be True')
+
+    def test_player_ids_by_team(self):
+        """test _helpers._player_ids_by_team function"""
+        team_ids = _helpers._player_ids_by_team(self.team_city)
+        self.assertTrue(isinstance(team_ids, dict), 'No team player IDs')
 
 
 if __name__ == '__main__':
