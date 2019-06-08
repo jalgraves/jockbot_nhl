@@ -77,10 +77,10 @@ class NHL:
         data = _api_request(endpoint)
         return data['teams'][0]
 
-    def get_team_roster(self, team_id=None, team_name=None):
+    def get_team_roster(self, team_id=None, team_name=None, season=None):
         """Get team roster. Return list of player objects"""
-        if not team_id:
-            team_id = _team_id(team_name)
+        team_id = _team_id(team_name) if not team_id else team_id
+        season = self.current_season if not season else season
         endpoint = f"teams/{team_id}/roster"
         data = _api_request(endpoint)
         player_list = data['roster']
@@ -122,7 +122,6 @@ class NHL:
         endpoint = f"people/{player_id}/{season_endpoint}"
         data = _api_request(endpoint)
         if data:
-            print(data)
             stats = data['stats'][0]['splits'][0]
             stats['team'] = team
             return stats

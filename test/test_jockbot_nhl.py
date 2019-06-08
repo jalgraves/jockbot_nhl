@@ -1,4 +1,3 @@
-import json
 import unittest
 import types
 
@@ -22,13 +21,7 @@ class TestNHL(unittest.TestCase):
         self.stat_keys = self.config['stat_keys']
         self.goalie_stat = 'goalsAgainstAverage'
         self.skater_stat = 'points'
-
-    def _get_config(self):
-        """Get configuration"""
-        # config_file = os.path.join(os.path.dirname(__file__), 'config.json')
-        with open('./jockbot_nhl/config.json', 'r') as f:
-            config = json.load(f)
-        return config
+        self.past_season = '20102011'
 
     def test_nhl(self):
         self.assertEqual(len(self.league.current_season), 8, 'Incorrect Seasson')
@@ -109,7 +102,9 @@ class TestNHL(unittest.TestCase):
     def test_get_team_roster(self):
         """Test NHL.get_team_roster function"""
         roster = self.league.get_team_roster(team_id=self.team_id)
+        historical_roster = self.league.get_team_roster(team_id=self.team_id, season=self.past_season)
         self.assertTrue(isinstance(roster, list), 'No Roster')
+        self.assertTrue(isinstance(historical_roster, list), 'No historical roster')
 
     def test_get_team_schedule(self):
         """Test NHL.get_team_schedule function"""
@@ -147,6 +142,11 @@ class TestNHL(unittest.TestCase):
     def test_filter_stats_check(self):
         """Test nhl._filter_stats_check function"""
         self.assertTrue(nhl._filter_stats_check(), 'Filter should be True')
+
+    def test_player_ids_by_team(self):
+        """test _helpers._player_ids_by_team function"""
+        team_ids = _helpers._player_ids_by_team(self.team_city)
+        self.assertTrue(isinstance(team_ids, dict), 'No team player IDs')
 
 
 if __name__ == '__main__':

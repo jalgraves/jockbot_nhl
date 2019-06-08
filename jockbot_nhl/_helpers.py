@@ -283,7 +283,7 @@ def _current_season_start_date():
         season = data['seasons'][0]['regularSeasonStartDate']
         return season
     else:
-        raise JockBotNHLException('Unable to retrieve current NHL season')
+        raise JockBotNHLException('Unable to retrieve current NHL start date')
 
 
 def _filter_stats_check():
@@ -297,13 +297,22 @@ def _filter_stats_check():
         return True
 
 
+def _get_team_roster(team_id=None, team_name=None):
+    """Get team roster. Return list of player objects"""
+    if not team_id:
+        team_id = _team_id(team_name)
+    endpoint = f"teams/{team_id}/roster"
+    data = _api_request(endpoint)
+    player_list = data['roster']
+    return player_list
+
+
 def _player_ids_by_team(team):
     """Build dict containing player name and their NHL API player ID
     Iterate through roster and get player names and API IDs
     """
     players = {}
-    nhl = NHL()
-    team = nhl.get_team_roster(team_name=team)
+    team = _get_team_roster(team_name=team)
     for player in team:
         name = player['person']['fullName'].lower()
         players[name] = player['person']['id']
