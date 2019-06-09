@@ -1,4 +1,4 @@
-from jockbot_nhl.   _helpers import (
+from jockbot_nhl._helpers import (
     CONFIG,
     JockBotNHLException,
     _api_request,
@@ -7,6 +7,7 @@ from jockbot_nhl.   _helpers import (
     _filter_stats_check,
     _game_scores,
     _parse_leaders,
+    _parse_leaders_teams,
     _parse_schedule,
     _player_id,
     _recent_games,
@@ -172,6 +173,18 @@ class NHL:
                      (default is 10)
         """
         leaders = _parse_leaders(stat, 'skater', **kwargs)
+        return leaders
+
+    def team_league_leaders(self, stat, **kwargs):
+        """Get league leaders for an individual team stat
+        OPTIONAL KEYWORD ARGS:
+        season: team stat leaders for a given season. ex. season='19881989'
+                (default is current season)
+
+        season_type: 2 for regular 3 for post season. ex. season_type='3'
+                     (default is regular season)
+        """
+        leaders = _parse_leaders_teams(stat, **kwargs)
         return leaders
 
 

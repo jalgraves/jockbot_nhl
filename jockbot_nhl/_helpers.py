@@ -56,6 +56,35 @@ def _api_request(endpoint, base_url=None, verify=True):
     return data
 
 
+def _napi_request(base_url=None, params=None, verify=True):
+    """
+    GET request to NHL API
+    """
+    if not base_url:
+        base_url = 'https://statsapi.web.nhl.com/api/v1/'
+    retries = Retry(total=3, backoff_factor=1, status_forcelist=[x for x in range(500, 506)])
+    SESSION.mount('http://', HTTPAdapter(max_retries=retries))
+    try:
+        request = SESSION.get(base_url, params=params, verify=verify)
+    except socket.gaierror:
+        time.sleep(1)
+        request = SESSION.get(request.url)
+    except requests.exceptions.ConnectionError:
+        time.sleep(2)
+        request = SESSION.get(request.url)
+    if request.status_code != 200:
+        error_message = [
+            f"Error with NHL API request | status: {request.status_code}",
+            f"url: {request.url}\n{request.content}"
+        ]
+        error_message = "\n".join(error_message)
+        logging.error(error_message)
+        raise JockBotNHLException(error_message)
+    else:
+        data = request.json()
+    return data
+
+
 def _team_id(team):
     """Get the NHL API ID for a provided team"""
     teams = CONFIG['team_names_and_cities']
@@ -240,15 +269,47 @@ def _fetch_league_leaders(stat, player_type, season=None, season_type='2', num_p
         raise JockBotNHLException(f"Invalid player_type: {player_type}")
     base_url = f"http://www.nhl.com/stats/rest/{player_type}s"
     season = _current_season() if not season else season
-    query = [
-        f"?reportType=season&reportName={player_type}summary",
-        f"cayenneExp=seasonId={season}%20and%20gameTypeId={season_type}%20and%20timeOnIce%3E{time_filter}&sort={stat}"
-    ]
-    endpoint = "&".join(query)
-    leaders = _api_request(endpoint, base_url=base_url, verify=False)['data']
+    query = f"seasonId={season} and gameTypeId={season_type} and timeOnIce>{time_filter}"
+    params = {
+        "reportType": "season",
+        "reportName": f"{player_type}summary",
+        "cayenneExp": query,
+        "sort": stat
+    }
+    leaders = _napi_request(base_url=base_url, params=params, verify=False)['data']
     if reverse:
         leaders.reverse()
     return leaders[:num_players]
+
+
+def _fetch_league_leaders_teams(stat, season=None, season_type='2', reverse=False):
+    """Fetch team stat leaders
+    PARAMS
+    :stat: stat to retrieve leaders for
+    :season: str ex. '20182019'  (defaults to current season)
+    :season_type: 2 for regular season (default) 3 for playoffs
+    :reverse: reverse the order of results
+    """
+    base_url = f"{CONFIG['urls']['nhle']}team"
+    season = _current_season() if not season else season
+    query = f"leagueId=133 and gameTypeId={season_type} and seasonId>={season} and seasonId<={season}"
+    sort = {
+        "property": stat,
+        "direction": "DESC"
+    }
+    sort = str(sort).replace('\'', '\"')
+    params = {
+        "isAggregate": "false",
+        "reportType": "basic",
+        "isGame": "false",
+        "reportName": "teamsummary",
+        "sort": sort,
+        "cayenneExp": query
+    }
+    leaders = _napi_request(base_url=base_url, params=params)['data']
+    if reverse:
+        leaders.reverse()
+    return leaders
 
 
 def _parse_leaders(stat, player_type, **kwargs):
@@ -261,6 +322,16 @@ def _parse_leaders(stat, player_type, **kwargs):
         player_data['team'] = leader['playerTeamsPlayedFor']
         player_data['value'] = leader[stat]
         leaders[name] = player_data
+    return leaders
+
+
+def _parse_leaders_teams(stat, **kwargs):
+    """Parse stats for league leaders"""
+    leaders = OrderedDict()
+    leaders_list = _fetch_league_leaders_teams(stat, **kwargs)
+    for leader in leaders_list:
+        name = leader['teamFullName']
+        leaders[name] = leader[stat]
     return leaders
 
 
