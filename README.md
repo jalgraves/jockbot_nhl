@@ -10,7 +10,8 @@
 - **Get current or historical NHL league standings**
 - **Get player stats and info for NHL players both active and retired, regualr season and playoffs**
 - **Get stats and info for NHL teams both current and historical**
-- **Get NHL league leaders both current and historical**
+- **Get NHL league leaders player stats both current and historical**
+- **Get NHL team stats league leaders both current and historical**
 - **All data returned in JSON**
 
 ---
@@ -106,4 +107,11 @@ points, assists, goals, penaltyMinutes, faceoffWinPctg, gameWinningGoals, gamesP
 otGoals (overtime goals), plusMinus, pointsPerGame, ppGoals (power play goals), ppPoints (power play points), shGoals (short handed goals) shPoints (short handed points),shiftsPerGame, shots, shootingPctg, timeOnIcePerGame
 
     >>> current_season_leaders = nhl.skater_league_leaders('points')
+    >>> playoff_points_leader = nhl.skater_league_leaders('points', season_type='3')
     >>> past_season_leaders = nhl.skater_league_leaders('points', season='20102011')
+
+##### Team Stat League Leaders
+
+    >>> league_leaders_team_points = nhl.team_league_leaders('points')
+    >>> league_leaders_team_goals_against = nhl.team_league_leaders('goalsAgainst', reverse=True)
+    >>> playoff_leaders_team_goals = nhl.team_league_leaders('goalsFor', season_type='3')

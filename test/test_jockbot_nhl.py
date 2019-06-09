@@ -78,6 +78,14 @@ class TestNHL(unittest.TestCase):
         message = f"Skater Stat Keys Do Not Match\n{leaders[0].keys()}"
         self.assertEqual(list(leaders[0].keys()), stat_keys, message)
 
+    def test_fetch_league_leaders_teams(self):
+        """Test _helpers._league_leaders_teams function"""
+        stat_keys = self.stat_keys['teams']
+        leaders = _helpers._fetch_league_leaders_teams('points')
+        self.assertTrue(isinstance(leaders, list), 'Incorrect leaders Type')
+        message = f"Leader Stat Keys Do Not Match\n{leaders[0].keys()}"
+        self.assertEqual(list(leaders[0].keys()), stat_keys, message)
+
     def test_parse_leaders(self):
         """Test nhl._parse_leaders function"""
         leaders = nhl._parse_leaders('points', 'skater')
@@ -138,6 +146,11 @@ class TestNHL(unittest.TestCase):
         """Test NHL.skater_league_leaders function"""
         leaders = self.league.skater_league_leaders(self.skater_stat)
         self.assertEqual(len(leaders), 10, f"Incorrect number of players: {len(leaders)}")
+
+    def test_team_league_leaders(self):
+        """Test NHL.team_league_leaders function"""
+        leaders = self.league.team_league_leaders(self.skater_stat)
+        self.assertTrue(isinstance(leaders, dict), 'No team stats leaders')
 
     def test_filter_stats_check(self):
         """Test nhl._filter_stats_check function"""
