@@ -1,4 +1,4 @@
 #!/bin/bash
 
-make test
+nosetests test/test_jockbot_nhl.py
 
