@@ -161,6 +161,19 @@ class TestNHL(unittest.TestCase):
         team_ids = _helpers._player_ids_by_team(self.team_city)
         self.assertTrue(isinstance(team_ids, dict), 'No team player IDs')
 
+    def test_team_ranks(self):
+        overall_rank = self.team.overall_rank
+        conference_rank = self.team.conference_rank
+        division_rank = self.team.division_rank
+        # TODO update this test to not break in off season
+        self.assertIsNotNone(overall_rank, 'Overall rank is empty')
+        self.assertIsNotNone(conference_rank, 'Conference rank is empty')
+        self.assertIsNotNone(division_rank, 'Division rank is empty')
+
+    def test_team_info(self):
+        self.assertEqual(self.team.division, 'Atlantic')
+        self.assertEqual(self.team.conference, 'Eastern')
+
 
 if __name__ == '__main__':
     unittest.main()
