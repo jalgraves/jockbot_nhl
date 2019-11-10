@@ -46,7 +46,7 @@ class NHL:
     standings = _standings()
     league_standings = _fetch_standings(standings, 'league')
     conference_standings = _fetch_standings(standings, 'conference')
-    divison_standings = _fetch_standings(standings, 'division')
+    division_standings = _fetch_standings(standings, 'division')
     wildcard_standings = {
         'Eastern': _wild_card_standings('eastern'),
         'Western': _wild_card_standings('western')
@@ -197,6 +197,8 @@ class NHLTeam(NHL):
         self.info = self.get_team_info(team_id=self.id)
         self.name = self.info['name']
         self.venue = self.info['venue']['name']
+        self.conference = self.info['conference']['name']
+        self.division = self.info['division']['name']
         self.stats = self.get_team_stats(self.id)
         self.roster = self.get_team_roster(self.id)
         self.schedule = _parse_schedule(self.get_team_schedule(team_id=self.id))
@@ -207,9 +209,9 @@ class NHLTeam(NHL):
         self.otl = self.record['record']['ot']
         self.games_played = self.record['games_played']
         self.points = self.record['points']
-        self.division_rank = None
-        self.conference_rank = None
-        self.overall_rank = None
+        self.division_rank = self.division_standings[self.division][self.name]
+        self.conference_rank = self.conference_standings[self.conference][self.name]
+        self.overall_rank = self.league_standings.get(self.name)
         self.year_by_year_records = None
 
     def __repr__(self):
