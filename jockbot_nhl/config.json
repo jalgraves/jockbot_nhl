@@ -110,7 +110,10 @@
         "golden knights": 54,
         "las vegas": 54,
         "knights": 54,
-        "vegas": 54
+        "vegas": 54,
+        "seattle kraken": 55,
+        "seattle": 55,
+        "kraken": 55
     },
     "full_team_names": {
         "new jersey devils": 1,
@@ -143,7 +146,8 @@
         "minnesota wild": 30,
         "winnipeg jets": 52,
         "arizona coyotes": 53,
-        "vegas golden knights": 54
+        "vegas golden knights": 54,
+        "seattle kraken": 55
     },
     "standings_schema": {
         "conference": {
